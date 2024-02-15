@@ -82,10 +82,11 @@ func CreateGraphiteMetrics(samples model.Vector, metricPrefix string) string {
 			if name == "__name__" {
 				continue
 			}
-			tags += fmt.Sprintf(";%s=%s", name, value)
+			formatedtagvalue := string(value)
+			formatedtagvalue = strings.Replace(formatedtagvalue, "=", ":", -1)
+			tags += fmt.Sprintf(";%s=%s", name, formatedtagvalue)
 		}
 		tags = strings.Replace(tags, "<nil>", "0", -1)
-		tags = strings.Replace(tags, "=", ":", -1)
 		value = strings.Replace(value, "NaN", "0", -1)
 
 		metric := fmt.Sprintf("%s%s %s %d\n", name, tags, value, timestamp)
