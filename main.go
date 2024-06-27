@@ -77,19 +77,7 @@ func CreateGraphiteMetrics(samples model.Vector, metricPrefix string) string {
 		now := time.Now()
 		timestamp := now.Unix()
 
-		tags := ""
-		for name, value := range sample.Metric {
-			if name == "__name__" {
-				continue
-			}
-			formatedtagvalue := string(value)
-			formatedtagvalue = strings.Replace(formatedtagvalue, "=", ":", -1)
-			tags += fmt.Sprintf(";%s=%s", name, formatedtagvalue)
-		}
-		tags = strings.Replace(tags, "<nil>", "0", -1)
-		value = strings.Replace(value, "NaN", "0", -1)
-
-		metric := fmt.Sprintf("%s%s %s %d\n", name, tags, value, timestamp)
+		metric := fmt.Sprintf("%s %s %d\n", name, value, timestamp)
 
 		metrics += metric
 	}
