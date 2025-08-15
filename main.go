@@ -16,7 +16,8 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/prometheus/client_golang/api/prometheus"
+	"github.com/prometheus/client_golang/api"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
 )
@@ -83,11 +84,11 @@ func CreateGraphiteMetrics(samples model.Vector, metricPrefix string) string {
 				continue
 			}
 			formatedtagvalue := string(value)
-			formatedtagvalue = strings.Replace(formatedtagvalue, "=", ":", -1)
+			formatedtagvalue = strings.ReplaceAll(formatedtagvalue, "=", ":" )
 			tags += fmt.Sprintf(";%s=%s", name, formatedtagvalue)
 		}
-		tags = strings.Replace(tags, "<nil>", "0", -1)
-		value = strings.Replace(value, "NaN", "0", -1)
+		tags = strings.ReplaceAll(tags, "<nil>", "0" )
+		value = strings.ReplaceAll(value, "NaN", "0" )
 
 		metric := fmt.Sprintf("%s%s %s %d\n", name, tags, value, timestamp)
 
@@ -112,7 +113,7 @@ func CreateInfluxMetrics(samples model.Vector, metricPrefix string) string {
 			}
 		}
 
-		metric = strings.Replace(metric, "\n", "", -1)
+		metric = strings.ReplaceAll(metric, "\n", "", )
 
 		value := strconv.FormatFloat(float64(sample.Value), 'f', -1, 64)
 
@@ -151,23 +152,22 @@ func QueryPrometheus(promURL string, queryString string) (model.Vector, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	promConfig := prometheus.Config{Address: promURL}
-	promClient, err := prometheus.New(promConfig)
-
+	client, err := api.NewClient(api.Config{Address: promURL})
 	if err != nil {
 		return nil, err
 	}
 
-	promQueryClient := prometheus.NewQueryAPI(promClient)
-
-	promResponse, err := promQueryClient.Query(ctx, queryString, time.Now())
-
+	v1api := v1.NewAPI(client)
+	result, warnings, err := v1api.Query(ctx, queryString, time.Now())
 	if err != nil {
 		return nil, err
 	}
+	if len(warnings) > 0 {
+		log.Printf("Warnings: %v\n", warnings)
+	}
 
-	if promResponse.Type() == model.ValVector {
-		return promResponse.(model.Vector), nil
+	if result.Type() == model.ValVector {
+		return result.(model.Vector), nil
 	}
 
 	return nil, errors.New("unexpected response type")
