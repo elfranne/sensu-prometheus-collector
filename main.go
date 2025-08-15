@@ -85,6 +85,8 @@ func CreateGraphiteMetrics(samples model.Vector, metricPrefix string) string {
 			}
 			formatedtagvalue := string(value)
 			formatedtagvalue = strings.ReplaceAll(formatedtagvalue, "=", ":" )
+			formatedtagvalue = strings.ReplaceAll(formatedtagvalue, ".", "_" )
+
 			tags += fmt.Sprintf(";%s=%s", name, formatedtagvalue)
 		}
 		tags = strings.ReplaceAll(tags, "<nil>", "0" )
